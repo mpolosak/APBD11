@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices.JavaScript;
 using APBD11.Data;
 using APBD11.DTOs;
 using APBD11.Models;
@@ -9,7 +10,41 @@ public class PrescriptionService(DatabaseContext context) : IPrescriptionService
 {
     public async Task<int> CreatePrescriptionAsync(PostPrescriptionDto prescription)
     {
-        throw new NotImplementedException();
+        if(!await context.Doctors.AnyAsync(d => d.IdDoctor == prescription.IdDoctor))
+            throw new NotFoundException("Doctor not found");
+        
+        foreach (var medicament in prescription.Medicaments)
+            if(!await context.Medicaments.AnyAsync(m => m.IdMedicament == medicament.IdMedicament))
+                throw new NotFoundException($"Medicament with id {medicament.IdMedicament} not found");
+        var idPatient = prescription.Patient.IdPatient;
+        var patientExist = await context.Patients.AnyAsync(p
+            => p.IdPatient == idPatient);
+        if (!patientExist)
+        {
+            var entry = await context.Patients.AddAsync(new Patient()
+            {
+                FirstName = prescription.Patient.FirstName,
+                LastName = prescription.Patient.LastName,
+                Birthdate = DateOnly.FromDateTime(prescription.Patient.Birthdate ?? DateTime.Now),
+            });
+            await context.SaveChangesAsync();
+            idPatient = entry.Entity.IdPatient;
+        }
+        var newEntry = await context.Prescriptions.AddAsync(new Prescription()
+        {
+            IdPatient = idPatient,
+            PrescriptionMedicaments = prescription.Medicaments.Select(m => new PrescriptionMedicament()
+            {
+                IdMedicament = m.IdMedicament,
+                Details = m.Details,
+                Dose = m.Dose,
+            }).ToList(),
+            IdDoctor = prescription.IdDoctor??-1,
+            Date = DateOnly.FromDateTime(prescription.Date ?? DateTime.Now),
+            DueDate = DateOnly.FromDateTime(prescription.DueDate ?? DateTime.Now),
+        });
+        await context.SaveChangesAsync();
+        return newEntry.Entity.IdPrescription;
     }
 
     public async Task<PatientDetailsDto> GetPatientAsync(int id)
