@@ -46,5 +46,16 @@ public class DatabaseContext : DbContext
                 IdPatient = 3
             }
         });
+        modelBuilder.Entity<Medicament>().HasData(new List<Medicament>()
+        {
+            new Medicament()
+            {
+                IdMedicament = 1, Name = "Paracetamol", Type = "Pain Killer", Description = ""
+            },
+            new Medicament()
+            {
+                IdMedicament = 2, Name = "Ibuprofen", Type = "Pain Killer", Description = ""
+            }
+        });
     }
 }
