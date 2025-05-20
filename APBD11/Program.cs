@@ -1,4 +1,5 @@
 using APBD11.Data;
+using APBD11.Middlewares;
 using APBD11.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,7 +17,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 
 var app = builder.Build();
-
+app.UseMiddleware<ExceptionHandlerMiddleware>();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
